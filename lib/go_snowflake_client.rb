@@ -1,4 +1,4 @@
-$: << '.'
+$LOAD_PATH << File.dirname(__FILE__)
 require 'ruby_snowflake_client/version'
 require 'ffi'
 
@@ -19,7 +19,7 @@ module GoSnowflakeClient
   # @param port[Integer]
   # @return error[String] or nil
   def connect(account, warehouse, database, schema, user, password, role, port = 443)
-    error, cptr = GoSnowflakeClientBinding.connect(account, warehouse, database, schema, user, password, role, port)
+    error, cptr = GoSnowflakeClientBinding.connect(account, warehouse, database, schema, user, password, role, port || 443)
     LibC.free(cptr) if error
     error
   end
@@ -49,7 +49,7 @@ module GoSnowflakeClient
     return nil if raw_row.nil? || raw_row == FFI::Pointer::NULL
 
     raw_row.get_array_of_pointer(0, field_count).map do |cstr|
-      if cstr == FFI::Pointer::NULL
+      if cstr == FFI::Pointer::NULL || cstr.nil?
         nil
       else
         str = cstr.read_string
