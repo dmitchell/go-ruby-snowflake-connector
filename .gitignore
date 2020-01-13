@@ -3,3 +3,6 @@ ruby_snowflake_client.h
 ruby_snowflake_client.so
 /.rakeTasks
 .idea/*
+
+# ruby gems
+*.gem

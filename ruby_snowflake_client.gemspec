@@ -15,10 +15,10 @@ Gem::Specification.new do |s|
   DESC
   s.license = 'MIT'  # TODO double check
 
-  s.files = ['ext/ruby_snowflake_client.h', 'ext/ruby_snowflake_client.so', 'lib/go_snowflake_client.rb']
+  s.files = ['ext/ruby_snowflake_client.h', 'ext/ruby_snowflake_client.so', 'lib/go_snowflake_client.rb', 'lib/ruby_snowflake_client/version.rb']
 
   # perhaps nothing and figure out how to build and pkg the platform specific .so, or .a, or ...
-  s.extensions << "ext/extconf.rb"
+  #s.extensions << "ext/ruby_snowflake_client/extconf.rb"
 
   s.add_dependency 'ffi'
   s.add_development_dependency "bundler"
