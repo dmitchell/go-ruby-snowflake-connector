@@ -6,3 +6,4 @@ ruby_snowflake_client.so
 
 # ruby gems
 *.gem
+/.DS_Store

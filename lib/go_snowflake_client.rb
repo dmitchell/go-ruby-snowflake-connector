@@ -4,7 +4,7 @@ require 'ffi'
 
 # Note: this library is not thread safe as it caches the db and last error
 # The call pattern expectation is to call last_error after any call which may have gotten an error. If last_error is
-# `nil`, there was no error. The exception is `connect` which currently just returns the error or `nil`.
+# `nil`, there was no error.
 module GoSnowflakeClient
   extend self
 
@@ -17,28 +17,30 @@ module GoSnowflakeClient
 
   # @param account[String] should include everything in the db url ahead of region.snowflakecomputing.com
   # @param port[Integer]
-  # @return error[String] or nil
+  # @return query_object[Pointer] a pointer to use for subsequent calls not inspectable nor viewable by Ruby
   def connect(account, warehouse, database, schema, user, password, role, port = 443)
-    error, cptr = GoSnowflakeClientBinding.connect(account, warehouse, database, schema, user, password, role, port || 443)
-    LibC.free(cptr) if error
-    error
+    GoSnowflakeClientBinding.connect(account, warehouse, database, schema, user, password, role, port || 443)
   end
 
-  def close
-    GoSnowflakeClientBinding.close()
+  # @param db_pointer[Pointer] the pointer which `connect` returned.
+  def close(db_pointer)
+    GoSnowflakeClientBinding.close(db_pointer)
   end
 
+  # @param db_pointer[Pointer] the pointer which `connect` returned.
   # @param statement[String] an executable query which should return number of rows affected
   # @return rowcount[Number] number of rows or nil if there was an error
-  def exec(statement)
-    count = GoSnowflakeClientBinding.exec(statement)  # returns -1 for error
+  def exec(db_pointer, statement)
+    count = GoSnowflakeClientBinding.exec(db_pointer, statement)  # returns -1 for error
     count >= 0 ? count : nil
   end
 
+  # @param db_pointer[Pointer] the pointer which `connect` returned.
+  # @param query[String] a select query to run.
   # @return query_object[Pointer] a pointer to use for subsequent calls not inspectable nor viewable by Ruby; however,
   #   if it's `nil`, check `last_error`
-  def fetch(query)
-    GoSnowflakeClientBinding.fetch(query)
+  def fetch(db_pointer, query)
+    GoSnowflakeClientBinding.fetch(db_pointer, query)
   end
 
   # @param query_object[Pointer] the pointer which `fetch` returned. Go will gc this object when the query is done; so,
@@ -79,10 +81,10 @@ module GoSnowflakeClient
     ffi_lib(File.expand_path('../ext/ruby_snowflake_client.so', File.dirname(__FILE__)))
     attach_function(:last_error, 'LastError', [], :strptr)
     # ugh, `port` in gosnowflake is just :int; however, ruby - ffi -> go is passing 32bit int if I just decl :int.
-    attach_function(:connect, 'Connect', [:string, :string, :string, :string, :string, :string, :string, :int64], :strptr)
-    attach_function(:close, 'Close', [], :void)
-    attach_function(:exec, 'Exec', [:string], :int64)
-    attach_function(:fetch, 'Fetch', [:string], :pointer)
+    attach_function(:connect, 'Connect', [:string, :string, :string, :string, :string, :string, :string, :int64], :pointer)
+    attach_function(:close, 'Close', [:pointer], :void)
+    attach_function(:exec, 'Exec', [:pointer, :string], :int64)
+    attach_function(:fetch, 'Fetch', [:pointer, :string], :pointer)
     attach_function(:next_row, 'NextRow', [:pointer], :pointer)
   end
 end
