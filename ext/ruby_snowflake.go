@@ -14,13 +14,9 @@ import (
 //  "fmt"
 )
 
-// TODO free up all c objs esp CString
-// TODO Close the query (I think it's a noop tho)
-
 // Lazy coding: storing last error and connection as global vars bc don't want to figure out how to pkg and pass them
 // back and forth to ruby
 var last_error error
-var db *sql.DB  // TODO follow gopointer pattern to return this to ruby
 
 //export LastError
 func LastError() *C.char {
@@ -31,11 +27,11 @@ func LastError() *C.char {
   }
 }
 
-// @returns nil if no error or the error string
+// @returns db pointer
 // ugh, ruby and go were disagreeing about the length of `int` so I had to be particular here and in the ffi
 //export Connect
 func Connect(account *C.char, warehouse *C.char, database *C.char, schema *C.char,
-  user *C.char, password *C.char, role *C.char, port int64) *C.char {
+  user *C.char, password *C.char, role *C.char, port int64) unsafe.Pointer {
   // other optional parms: Application, Host, and alt auth schemes
   cfg := &sf.Config{
     Account:   C.GoString(account),
@@ -51,19 +47,21 @@ func Connect(account *C.char, warehouse *C.char, database *C.char, schema *C.cha
   
   dsn, last_error := sf.DSN(cfg)
   if last_error != nil {
-    return LastError()
+    return nil
   }
   
+  var db *sql.DB
   db, last_error = sql.Open("snowflake", dsn)
-  if last_error != nil {
-    return LastError()
+  if db == nil {
+    return nil
+  } else {
+    return gopointer.Save(db)
   }
-  
-  return nil
 }
 
 //export Close
-func Close() {
+func Close(db_pointer unsafe.Pointer) {
+  db := decodeDbPointer(db_pointer)
   if db != nil {
     db.Close()
   }
@@ -71,7 +69,8 @@ func Close() {
 
 // @return number of rows affected or -1 for error
 //export Exec
-func Exec(statement *C.char) int64 {
+func Exec(db_pointer unsafe.Pointer, statement *C.char) int64 {
+  db := decodeDbPointer(db_pointer)
   var res sql.Result
   res, last_error = db.Exec(C.GoString(statement))
   if res != nil {
@@ -82,7 +81,8 @@ func Exec(statement *C.char) int64 {
 }
 
 //export Fetch
-func Fetch(statement *C.char) unsafe.Pointer {
+func Fetch(db_pointer unsafe.Pointer, statement *C.char) unsafe.Pointer {
+  db := decodeDbPointer(db_pointer)
   var rows *sql.Rows
   rows, last_error = db.Query(C.GoString(statement))
   if rows != nil {
@@ -94,15 +94,16 @@ func Fetch(statement *C.char) unsafe.Pointer {
 }
 
 // NOTE: gc's the rows_pointer object on EOF and returns nil. LastError is set to EOF
-// may need to be **C.char?
 //export NextRow
 func NextRow(rows_pointer unsafe.Pointer) **C.char {
-  decode := gopointer.Restore(rows_pointer)
+  if rows_pointer == nil {
+    last_error = errors.New("rows_pointer null: cannot fetch")
+    return nil    
+  }
   var rows *sql.Rows
+  rows = gopointer.Restore(rows_pointer).(*sql.Rows)
   
-  if decode != nil {
-    rows = decode.(*sql.Rows)
-  } else {
+  if rows == nil {
     last_error = errors.New("rows_pointer invalid: Restore returned nil")
     return nil
   }
@@ -144,6 +145,14 @@ func NextRow(rows_pointer unsafe.Pointer) **C.char {
     gopointer.Unref(rows_pointer) // free up for gc
   }
   return nil
+}
+
+func decodeDbPointer(db_pointer unsafe.Pointer) *sql.DB {
+  if db_pointer == nil {
+    last_error = errors.New("db_pointer is null. Cannot process command.")
+    return nil
+  }
+  return gopointer.Restore(db_pointer).(*sql.DB)
 }
 
 func main(){}
