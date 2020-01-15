@@ -80,8 +80,7 @@ from each query by a pattern like
       created_at: :to_time,
       session_idx: :to_i,
       log_idx: :to_i,
-      log_date: :to_utc_date,
-      log_path_date: :to_utc_date}.with_indifferent_access.freeze
+      log_date: :to_utc_date}.with_indifferent_access.freeze
 
   def self.column_name_to_cast
     COLUMN_NAME_TO_CAST
