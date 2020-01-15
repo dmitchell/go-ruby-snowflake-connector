@@ -1,29 +1,12 @@
+require_relative 'common_sample_interface.rb' # Creates/uses test_data table in the db you point to
 # Assumes you have access to snowflake_sample_data https://docs.snowflake.net/manuals/user-guide/sample-data.html
 # Set env vars: SNOWFLAKE_TEST_ACCOUNT, SNOWFLAKE_TEST_USER, SNOWFLAKE_TEST_PASSWORD, SNOWFLAKE_TEST_WAREHOUSE
 # optionally set SNOWFLAKE_TEST_SCHEMA, SNOWFLAKE_TEST_ROLE
-$LOAD_PATH << File.expand_path('../..', __FILE__)
-require 'lib/go_snowflake_client'
-require 'logger'
 
-class SnowflakeSampleData
+class SnowflakeSampleData < CommonSampleInterface
 
   def initialize
-    @logger = Logger.new(STDERR)
-
-    @db_pointer = GoSnowflakeClient.connect(
-      ENV['SNOWFLAKE_TEST_ACCOUNT'],
-      ENV['SNOWFLAKE_TEST_WAREHOUSE'],
-      "SNOWFLAKE_SAMPLE_DATA",
-      ENV['SNOWFLAKE_TEST_SCHEMA'] || 'TPCDS_SF10TCL',
-      ENV['SNOWFLAKE_TEST_USER'],
-      ENV['SNOWFLAKE_TEST_PASSWORD'],
-      ENV['SNOWFLAKE_TEST_ROLE'] || 'PUBLIC')
-
-    log_error unless @db_pointer
-  end
-
-  def close_db
-    GoSnowflakeClient.close(@db_pointer) if @db_pointer
+    super("SNOWFLAKE_SAMPLE_DATA")
   end
 
   def get_customer_names(where = "c_last_name = 'Flowers'")
@@ -48,10 +31,5 @@ class SnowflakeSampleData
     QUERY
 
     GoSnowflakeClient.select(@db_pointer, query, &block)
-  end
-
-  def log_error
-    @logger ||= Logger.new(STDERR)
-    @logger.error(GoSnowflakeClient.last_error)
   end
 end
