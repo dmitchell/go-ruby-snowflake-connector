@@ -41,11 +41,11 @@ module GoSnowflakeClient
   # @return error_string
   # @yield List<String>
   def select(db_pointer, sql, field_count: nil)
-    return nil unless db_pointer
+    return "db_pointer not initialized" unless db_pointer
     return to_enum(__method__, db_pointer, sql) unless block_given?
 
     query_pointer = fetch(db_pointer, sql)
-    return nil if query_pointer.nil? || query_pointer == FFI::Pointer::NULL
+    return last_error if query_pointer.nil? || query_pointer == FFI::Pointer::NULL
 
     field_count ||= column_count(query_pointer)
     loop do
@@ -54,6 +54,7 @@ module GoSnowflakeClient
 
       yield row
     end
+    nil
   end
 
   # @param db_pointer[Pointer] the pointer which `connect` returned.
@@ -110,9 +111,6 @@ module GoSnowflakeClient
   def column_count(query_object)
     GoSnowflakeClientBinding.query_column_count(query_object)
   end
-
-  # TODO write query method which takes block and iterates with an ensure to tell go to release query_object and that
-  # takes a list of converters for casting strings to intended types
 
   module LibC
     extend FFI::Library
