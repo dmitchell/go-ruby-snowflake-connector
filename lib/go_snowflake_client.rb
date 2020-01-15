@@ -2,7 +2,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'ruby_snowflake_client/version'
 require 'ffi'
 
-# Note: this library is not thread safe as it caches the db and last error
+# Note: this library is not thread safe as it caches the last error
 # The call pattern expectation is to call last_error after any call which may have gotten an error. If last_error is
 # `nil`, there was no error.
 module GoSnowflakeClient
@@ -15,7 +15,7 @@ module GoSnowflakeClient
     error
   end
 
-  # @param account[String] should include everything in the db url ahead of region.snowflakecomputing.com
+  # @param account[String] should include everything in the db url ahead of 'snowflakecomputing.com'
   # @param port[Integer]
   # @return query_object[Pointer] a pointer to use for subsequent calls not inspectable nor viewable by Ruby
   def connect(account, warehouse, database, schema, user, password, role, port = 443)

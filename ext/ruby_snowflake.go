@@ -41,7 +41,6 @@ func Connect(account *C.char, warehouse *C.char, database *C.char, schema *C.cha
 		User:      C.GoString(user),
 		Password:  C.GoString(password),
 		Role:      C.GoString(role),
-		Region:    "us-east-1",
 		Port:      int(port),
 	}
 
