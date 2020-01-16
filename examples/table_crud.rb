@@ -1,9 +1,10 @@
+# frozen_string_literal: true
+
 require_relative 'common_sample_interface.rb' # Creates/uses test_data table in the db you point to
 # Set env vars: SNOWFLAKE_TEST_ACCOUNT, SNOWFLAKE_TEST_USER, SNOWFLAKE_TEST_PASSWORD, SNOWFLAKE_TEST_WAREHOUSE, SNOWFLAKE_TEST_DATABASE
 # optionally set SNOWFLAKE_TEST_SCHEMA, SNOWFLAKE_TEST_ROLE
 # use GoSnowflakeClient.select(c.db_pointer, 'select * from test_table', field_count: 3).to_a to see the db contents
 class TableCRUD < CommonSampleInterface
-
   TEST_TABLE_NAME = 'TEST_TABLE'
 
   def initialize
@@ -25,7 +26,7 @@ class TableCRUD < CommonSampleInterface
   def insert_test_table(time_string_pairs)
     command = <<~COMMAND
       INSERT INTO #{TEST_TABLE_NAME} (some_timestamp, a_string)
-      VALUES #{time_string_pairs.map {|time, text| "('#{time}', '#{text}')"}.join(', ')}
+      VALUES #{time_string_pairs.map { |time, text| "('#{time}', '#{text}')" }.join(', ')}
     COMMAND
     result = GoSnowflakeClient.exec(@db_pointer, command)
     result || log_error
@@ -35,7 +36,7 @@ class TableCRUD < CommonSampleInterface
   def update_test_table(id_string_pairs)
     id_string_pairs.map do |id, text|
       command = <<~COMMAND
-        UPDATE #{TEST_TABLE_NAME} 
+        UPDATE #{TEST_TABLE_NAME}
         SET a_string = '#{text}'
         WHERE id = #{id}
       COMMAND

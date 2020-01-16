@@ -1,4 +1,6 @@
-$LOAD_PATH << File.expand_path('../..', __FILE__)
+# frozen_string_literal: true
+
+$LOAD_PATH << File.expand_path('..', __dir__)
 require 'lib/go_snowflake_client'
 require 'logger'
 
@@ -15,7 +17,8 @@ class CommonSampleInterface
       ENV['SNOWFLAKE_TEST_SCHEMA'] || 'TPCDS_SF10TCL',
       ENV['SNOWFLAKE_TEST_USER'],
       ENV['SNOWFLAKE_TEST_PASSWORD'],
-      ENV['SNOWFLAKE_TEST_ROLE'] || 'PUBLIC')
+      ENV['SNOWFLAKE_TEST_ROLE'] || 'PUBLIC'
+    )
 
     log_error unless @db_pointer
   end
