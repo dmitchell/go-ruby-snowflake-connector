@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 $LOAD_PATH << File.dirname(__FILE__)
 require 'ruby_snowflake_client/version'
 require 'ffi'
@@ -6,10 +8,10 @@ require 'ffi'
 # The call pattern expectation is to call last_error after any call which may have gotten an error. If last_error is
 # `nil`, there was no error.
 module GoSnowflakeClient
-  extend self
+  module_function
 
   # @return String last error or nil. May be end of file which is not really an error
-  def last_error()
+  def last_error
     error, cptr = GoSnowflakeClientBinding.last_error
     LibC.free(cptr) if error
     error
@@ -31,7 +33,7 @@ module GoSnowflakeClient
   # @param statement[String] an executable query which should return number of rows affected
   # @return rowcount[Number] number of rows or nil if there was an error
   def exec(db_pointer, statement)
-    count = GoSnowflakeClientBinding.exec(db_pointer, statement)  # returns -1 for error
+    count = GoSnowflakeClientBinding.exec(db_pointer, statement) # returns -1 for error
     count >= 0 ? count : nil
   end
 
@@ -41,7 +43,7 @@ module GoSnowflakeClient
   # @return error_string
   # @yield List<String>
   def select(db_pointer, sql, field_count: nil)
-    return "db_pointer not initialized" unless db_pointer
+    return 'db_pointer not initialized' unless db_pointer
     return to_enum(__method__, db_pointer, sql) unless block_given?
 
     query_pointer = fetch(db_pointer, sql)
@@ -124,13 +126,13 @@ module GoSnowflakeClient
 
     POINTER_SIZE = FFI.type_size(:pointer)
 
-    ffi_lib(File.expand_path('../ext/ruby_snowflake_client.so', File.dirname(__FILE__)))
+    ffi_lib(File.expand_path('../ext/ruby_snowflake_client.so', __dir__))
     attach_function(:last_error, 'LastError', [], :strptr)
     # ugh, `port` in gosnowflake is just :int; however, ruby - ffi -> go is passing 32bit int if I just decl :int.
-    attach_function(:connect, 'Connect', [:string, :string, :string, :string, :string, :string, :string, :int64], :pointer)
+    attach_function(:connect, 'Connect', %i[string string string string string string string int64], :pointer)
     attach_function(:close, 'Close', [:pointer], :void)
-    attach_function(:exec, 'Exec', [:pointer, :string], :int64)
-    attach_function(:fetch, 'Fetch', [:pointer, :string], :pointer)
+    attach_function(:exec, 'Exec', %i[pointer string], :int64)
+    attach_function(:fetch, 'Fetch', %i[pointer string], :pointer)
     attach_function(:next_row, 'NextRow', [:pointer], :pointer)
     attach_function(:query_columns, 'QueryColumns', [:pointer], :pointer)
     attach_function(:query_column_count, 'QueryColumnCount', [:pointer], :int32)
