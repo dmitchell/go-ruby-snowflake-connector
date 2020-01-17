@@ -87,9 +87,8 @@ func Fetch(db_pointer unsafe.Pointer, statement *C.char) unsafe.Pointer {
 	if rows != nil {
 		result := gopointer.Save(rows)
 		return result
-	} else {
-		return nil
 	}
+	return nil
 }
 
 // @return column names[List<String>] for the given query.
