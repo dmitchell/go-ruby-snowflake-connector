@@ -89,3 +89,6 @@ from each query by a pattern like
 
 Of course, instantiating an object for each row adds expense and gc stress; so, it may not always
 be a good approach.
+
+## Building linux package using docker
+run `./run_docker_build.sh`
